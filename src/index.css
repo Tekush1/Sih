@@ -1,0 +1,108 @@
+@import "tailwindcss";
+
+@layer base {
+  :root {
+    --background: 40 40% 98%;
+    --foreground: 222 47% 11%;
+    --primary: 24 95% 53%;
+    --primary-foreground: 0 0% 100%;
+    --card: 0 0% 100%;
+    --card-foreground: 222 47% 11%;
+    --border: 38 25% 90%;
+  }
+
+  body {
+    font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+    background-color: #faf7f2;
+    color: #1e293b;
+    overflow-x: hidden;
+  }
+
+  code, pre, .font-mono {
+    font-family: 'JetBrains Mono', monospace;
+  }
+}
+
+/* Incubation Cell card & panel utilities */
+.incubation-panel {
+  background: #ffffff;
+  border: 1px solid #fed7aa;
+  box-shadow: 0 4px 20px -2px rgba(234, 88, 12, 0.05);
+}
+
+.incubation-panel-glow {
+  background: #ffffff;
+  border: 1px solid #f97316;
+  box-shadow: 0 0 25px -5px rgba(249, 115, 22, 0.2);
+}
+
+.incubation-card {
+  background: #ffffff;
+  border: 1px solid #f1e9dc;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+}
+
+.incubation-card:hover {
+  border-color: #fdba74;
+  box-shadow: 0 6px 20px -2px rgba(234, 88, 12, 0.12);
+}
+
+/* Glassmorphism utilities adapted for light incubation theme */
+.glass-panel {
+  background: rgba(255, 255, 255, 0.92);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid #f1e7d8;
+}
+
+.glass-panel-glow {
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid #f97316;
+  box-shadow: 0 0 25px -5px rgba(249, 115, 22, 0.2);
+}
+
+.glass-card {
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid #ede3d2;
+}
+
+.glass-card:hover {
+  border-color: #f97316;
+  box-shadow: 0 4px 20px -2px rgba(249, 115, 22, 0.12);
+}
+
+/* Custom modern scrollbar for light theme */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: #f7f2e8;
+}
+::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #f97316;
+}
+
+/* Pulse glow keyframe */
+@keyframes neon-pulse {
+  0%, 100% {
+    opacity: 0.6;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.05);
+  }
+}
+
+.animate-neon-pulse {
+  animation: neon-pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}

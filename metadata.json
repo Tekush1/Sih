@@ -1,0 +1,6 @@
+{
+  "name": "Smart Hackathon 2026",
+  "description": "Smart Hackathon 2026 — Build • Innovate • Impact. Technocrats Institute of Technology (TIT) Bhopal internal hackathon for Smart India Hackathon (SIH 2026) featuring automated 6-minute stage presentation cycles, digital QR passes, and live sih.gov.in PS lookup.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
