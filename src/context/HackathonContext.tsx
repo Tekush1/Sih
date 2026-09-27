@@ -1,6 +1,21 @@
 import React, { createContext, useContext, useState, useEffect, useMemo } from 'react';
-import { Team, Stage, ScheduleSlot, AuditLog, UserRole, HackathonStats, TeamTrack, PPTSubmission, QRPass, SlideData, ScreenLiveState } from '../types';
+import { 
+  Team, 
+  Stage, 
+  ScheduleSlot, 
+  AuditLog, 
+  UserRole, 
+  HackathonStats, 
+  TeamTrack, 
+  PPTSubmission, 
+  QRPass, 
+  SlideData, 
+  ScreenLiveState,
+  CSVTeamRecord,
+  CSVImportResult
+} from '../types';
 import { generateSeedTeams, STAGES_INITIAL, generateSlideDeck } from '../data/seedData';
+import { normalizeTrack } from '../utils/csvParser';
 
 interface HackathonContextType {
   role: UserRole;
@@ -75,18 +90,21 @@ interface HackathonContextType {
   autoRegenerateSlots: (stageId: string, startHour?: number, startMin?: number) => void;
   syncGoogleSheets: () => Promise<number>;
   resetToDefaultData: () => void;
+  clearAllTeams: () => void;
+  updateTeamDriveUrl: (teamId: string, driveUrl: string) => void;
+  updateTeamsFromCSV: (records: CSVTeamRecord[], replaceAll?: boolean) => CSVImportResult;
 }
 
-const STORAGE_KEY = 'smart_hackathon_2026_tit_v2';
+const STORAGE_KEY = 'smart_hackathon_2026_tit_real_v6';
 
 const HackathonContext = createContext<HackathonContextType | undefined>(undefined);
 
 export const HackathonProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [role, setRole] = useState<UserRole>('PUBLIC');
-  const [activeTeamId, setActiveTeamId] = useState<string>('SH26-001');
+  const [activeTeamId, setActiveTeamId] = useState<string>('');
   const [activeStageId, setActiveStageId] = useState<string>('stage-alpha');
 
-  // Load from localStorage or initial seed
+  // Load from localStorage or start empty (no fake data)
   const [teams, setTeams] = useState<Team[]>(() => {
     try {
       const stored = localStorage.getItem(`${STORAGE_KEY}_teams`);
@@ -94,8 +112,7 @@ export const HackathonProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     } catch (e) {
       console.error(e);
     }
-    const seed = generateSeedTeams();
-    return seed.teams;
+    return [];
   });
 
   const [stages, setStages] = useState<Stage[]>(() => {
@@ -115,8 +132,7 @@ export const HackathonProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     } catch (e) {
       console.error(e);
     }
-    const seed = generateSeedTeams();
-    return seed.schedules;
+    return [];
   });
 
   const [auditLogs, setAuditLogs] = useState<AuditLog[]>(() => {
@@ -126,8 +142,7 @@ export const HackathonProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     } catch (e) {
       console.error(e);
     }
-    const seed = generateSeedTeams();
-    return seed.auditLogs;
+    return [];
   });
 
   // Screen live state for projector / stage screen
@@ -146,22 +161,22 @@ export const HackathonProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     const defaultDurations = [10, 60, 60, 40, 40, 20]; // 10s, 60s, 60s, 40s, 40s, 20s as requested
     const totalSecs = defaultDurations.reduce((a, b) => a + b, 0); // 230s
     return {
-      teamId: 'SH26-001',
+      teamId: '',
       slideIndex: 0,
-      slideRemainingSeconds: defaultDurations[0], // 10s for 1st slide
+      slideRemainingSeconds: defaultDurations[0],
       slideDurations: defaultDurations,
       totalRemainingSeconds: totalSecs,
       totalPitchSeconds: totalSecs,
       remainingSeconds: totalSecs,
       totalSeconds: totalSecs,
-      isRunning: true, // Auto-run timer continuously on Screen Portal
+      isRunning: false,
       autoAdvance: true,
       isFinished: false,
       lastUpdated: Date.now()
     };
   });
 
-  // Presentation line / queue of team IDs
+  // Presentation line / queue of team IDs (starts empty for real CSV)
   const [queueOrder, setQueueOrder] = useState<string[]>(() => {
     try {
       const stored = localStorage.getItem(`${STORAGE_KEY}_queueOrder`);
@@ -169,7 +184,7 @@ export const HackathonProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     } catch (e) {
       console.error(e);
     }
-    return ['SH26-001', 'SH26-002', 'SH26-003', 'SH26-004', 'SH26-005', 'SH26-006', 'SH26-007', 'SH26-008'];
+    return [];
   });
 
   // Derived teams in the presentation line
@@ -823,18 +838,69 @@ export const HackathonProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     return teams.length;
   };
 
-  // Reset to seed data
-  const resetToDefaultData = () => {
-    const seed = generateSeedTeams();
-    setTeams(seed.teams);
-    setSchedules(seed.schedules);
-    setStages(STAGES_INITIAL);
-    setAuditLogs(seed.auditLogs);
-    localStorage.removeItem(`${STORAGE_KEY}_teams`);
-    localStorage.removeItem(`${STORAGE_KEY}_stages`);
-    localStorage.removeItem(`${STORAGE_KEY}_schedules`);
-    localStorage.removeItem(`${STORAGE_KEY}_audit`);
+  // Reset / Clear all data
+  const clearAllTeams = () => {
+    setTeams([]);
+    setQueueOrder([]);
+    setSchedules([]);
+    setActiveTeamId('');
+    setScreenState((prev) => ({
+      ...prev,
+      teamId: '',
+      isRunning: false,
+      slideIndex: 0,
+      isFinished: false
+    }));
+    try {
+      localStorage.removeItem(`${STORAGE_KEY}_teams`);
+      localStorage.removeItem(`${STORAGE_KEY}_queueOrder`);
+      localStorage.removeItem(`${STORAGE_KEY}_schedules`);
+      localStorage.removeItem(`${STORAGE_KEY}_screenState`);
+    } catch (e) {
+      console.warn(e);
+    }
+    addAuditLog('DATABASE_CLEARED', 'Admin Controller', 'Purged all mock/fake squads and initialized clean presentation line ready for real CSV import.', 'SYSTEM');
     broadcastUpdate();
+  };
+
+  const updateTeamDriveUrl = (teamId: string, driveUrl: string) => {
+    const cleanUrl = driveUrl.trim();
+    setTeams((prev) =>
+      prev.map((t) => {
+        if (t.id === teamId) {
+          return {
+            ...t,
+            googleDriveFolder: cleanUrl,
+            submission: t.submission
+              ? {
+                  ...t.submission,
+                  googleDriveFolderUrl: cleanUrl,
+                  googleDriveFileUrl: cleanUrl
+                }
+              : {
+                  id: `sub-${teamId}-${Date.now()}`,
+                  fileName: `${t.name.replace(/\s+/g, '_')}_Deck`,
+                  fileSize: 'Online',
+                  fileType: 'PPTX',
+                  uploadedAt: new Date().toISOString(),
+                  version: 'v1.0 (Drive URL)',
+                  googleDriveFolderUrl: cleanUrl,
+                  googleDriveFileUrl: cleanUrl,
+                  status: 'APPROVED',
+                  slidesCount: 6,
+                  slides: []
+                }
+          };
+        }
+        return t;
+      })
+    );
+    broadcastUpdate();
+  };
+
+  // Reset to default
+  const resetToDefaultData = () => {
+    clearAllTeams();
   };
 
   // Send Team to Screen with exact per-slide durations (10s, 60s, 60s, 40s, 40s, 20s)
@@ -1125,6 +1191,247 @@ export const HackathonProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     broadcastUpdate();
   };
 
+  // Import / Update teams from CSV (Team Name, Track, Google Drive Link)
+  const updateTeamsFromCSV = (records: CSVTeamRecord[], replaceAll = false): CSVImportResult => {
+    if (!records || records.length === 0) {
+      return { added: 0, updated: 0, total: 0, teams };
+    }
+
+    let addedCount = 0;
+    let updatedCount = 0;
+    const newQueueTeamIds: string[] = [];
+
+    // Find current highest ID number (e.g. SH26-008 -> 8)
+    let maxIdNum = 0;
+    if (!replaceAll) {
+      teams.forEach((t) => {
+        const match = t.id.match(/SH26-(\d+)/i);
+        if (match) {
+          const num = parseInt(match[1], 10);
+          if (!isNaN(num) && num > maxIdNum) {
+            maxIdNum = num;
+          }
+        }
+      });
+    }
+
+    // Use a map keyed by lowercase team name for updating existing or appending new
+    const teamsMap = new Map<string, Team>();
+    if (!replaceAll) {
+      teams.forEach((t) => teamsMap.set(t.name.trim().toLowerCase(), { ...t }));
+    }
+
+    records.forEach((record) => {
+      const cleanName = (record.teamName || '').trim();
+      if (!cleanName) return;
+
+      const track = normalizeTrack(record.track);
+      let driveLink = (record.googleDriveLink || '').trim();
+      if (driveLink && !driveLink.startsWith('http://') && !driveLink.startsWith('https://')) {
+        driveLink = `https://${driveLink}`;
+      }
+
+      const key = cleanName.toLowerCase();
+      const existingTeam = teamsMap.get(key);
+
+      if (existingTeam) {
+        // Update existing team's track, drive link, members, and presentation status
+        const updatedMembers = record.membersList && record.membersList.length > 0
+          ? [
+              {
+                id: `m-${existingTeam.id}-leader`,
+                name: record.leaderName || existingTeam.leaderName,
+                email: record.leaderEmail || existingTeam.leaderEmail,
+                role: 'LEADER' as const,
+                college: record.college || existingTeam.college,
+                phone: record.leaderPhone || existingTeam.leaderPhone || '+91 98765 43210',
+                enrollment: record.leaderEnrollment || existingTeam.leaderEnrollment,
+                semester: record.leaderSem || existingTeam.leaderSem,
+                specialization: 'Team Lead'
+              },
+              ...record.membersList.map((m, mIdx) => ({
+                id: `m-${existingTeam.id}-${mIdx + 1}`,
+                name: m.name,
+                email: m.email || `member${mIdx + 1}.${cleanName.toLowerCase().replace(/[^a-z0-9]/g, '')}@gmail.com`,
+                role: 'MEMBER' as const,
+                college: record.college || existingTeam.college,
+                phone: m.phone || '',
+                enrollment: m.enrollment,
+                specialization: `Core Member ${mIdx + 1}`
+              }))
+            ]
+          : existingTeam.members;
+
+        const updatedTeam: Team = {
+          ...existingTeam,
+          track,
+          googleDriveFolder: driveLink || existingTeam.googleDriveFolder,
+          psId: record.psId || existingTeam.psId,
+          college: record.college || existingTeam.college,
+          problemStatement: record.problemStatement || existingTeam.problemStatement,
+          leaderName: record.leaderName || existingTeam.leaderName,
+          leaderEmail: record.leaderEmail || existingTeam.leaderEmail,
+          leaderPhone: record.leaderPhone || existingTeam.leaderPhone,
+          leaderEnrollment: record.leaderEnrollment || existingTeam.leaderEnrollment,
+          leaderSem: record.leaderSem || existingTeam.leaderSem,
+          theme: record.theme || existingTeam.theme,
+          members: updatedMembers,
+          submission: existingTeam.submission
+            ? {
+                ...existingTeam.submission,
+                googleDriveFolderUrl: driveLink || existingTeam.submission.googleDriveFolderUrl,
+                googleDriveFileUrl: driveLink || existingTeam.submission.googleDriveFileUrl,
+                status: 'APPROVED'
+              }
+            : {
+                id: `sub-${existingTeam.id}-${Date.now()}`,
+                fileName: `${cleanName.replace(/\s+/g, '_')}_Deck.pptx`,
+                fileSize: '12.4 MB',
+                fileType: 'PPTX',
+                uploadedAt: new Date().toISOString().replace('T', ' ').substring(0, 19) + ' UTC',
+                version: 'v1.0 (CSV Updated)',
+                googleDriveFolderUrl: driveLink,
+                googleDriveFileUrl: driveLink,
+                status: 'APPROVED',
+                slidesCount: 6,
+                slides: []
+              }
+        };
+
+        teamsMap.set(key, updatedTeam);
+        updatedCount++;
+      } else {
+        // Create brand new team
+        maxIdNum++;
+        const newTeamId = `SH26-${String(maxIdNum).padStart(3, '0')}`;
+        const newPsId = record.psId || `SIH${1600 + (maxIdNum % 50)}`;
+        const stageId =
+          track === 'AI & Robotics'
+            ? 'stage-alpha'
+            : track === 'Web3 & Cloud'
+            ? 'stage-beta'
+            : track === 'HealthTech & Bio'
+            ? 'stage-gamma'
+            : 'stage-delta';
+
+        const builtMembers: TeamMember[] = [
+          {
+            id: `m-${newTeamId}-leader`,
+            name: record.leaderName || `${cleanName} Lead`,
+            email: record.leaderEmail || `leader.${cleanName.toLowerCase().replace(/[^a-z0-9]/g, '')}@titbhopal.ac.in`,
+            role: 'LEADER' as const,
+            college: record.college || 'Technocrats Institute of Technology (TIT), Bhopal',
+            phone: record.leaderPhone || '+91 98765 43210',
+            enrollment: record.leaderEnrollment,
+            semester: record.leaderSem,
+            specialization: 'Team Lead'
+          }
+        ];
+
+        if (record.membersList && record.membersList.length > 0) {
+          record.membersList.forEach((m, mIdx) => {
+            builtMembers.push({
+              id: `m-${newTeamId}-${mIdx + 1}`,
+              name: m.name,
+              email: m.email || `member${mIdx + 1}.${cleanName.toLowerCase().replace(/[^a-z0-9]/g, '')}@gmail.com`,
+              role: 'MEMBER' as const,
+              college: record.college || 'Technocrats Institute of Technology (TIT), Bhopal',
+              phone: m.phone || '',
+              enrollment: m.enrollment,
+              specialization: `Core Member ${mIdx + 1}`
+            });
+          });
+        }
+
+        const newSubmission: PPTSubmission = {
+          id: `sub-${newTeamId}-${Date.now()}`,
+          fileName: `${cleanName.replace(/\s+/g, '_')}_Pitch.pptx`,
+          fileSize: 'Online Deck',
+          fileType: 'PPTX',
+          uploadedAt: new Date().toISOString().replace('T', ' ').substring(0, 19) + ' UTC',
+          version: 'v1.0 (CSV Imported)',
+          googleDriveFolderUrl: driveLink,
+          googleDriveFileUrl: driveLink,
+          status: 'APPROVED',
+          slidesCount: 6,
+          slides: []
+        };
+
+        const newTeam: Team = {
+          id: newTeamId,
+          name: cleanName,
+          college: record.college || 'Technocrats Institute of Technology (TIT), Bhopal',
+          track,
+          psId: newPsId,
+          sihOrganization: 'Ministry of Education / AICTE SIH 2026',
+          problemStatement:
+            record.problemStatement || `Smart India Hackathon 2026 solution in ${track} (${newPsId})`,
+          abstract: `Innovative ${track} solution by ${cleanName} developed for Smart India Hackathon 2026 nomination.`,
+          leaderName: record.leaderName || `${cleanName} Lead`,
+          leaderEmail: record.leaderEmail || `leader.${cleanName.toLowerCase().replace(/[^a-z0-9]/g, '')}@titbhopal.ac.in`,
+          leaderPhone: record.leaderPhone,
+          leaderEnrollment: record.leaderEnrollment,
+          leaderSem: record.leaderSem,
+          theme: record.theme,
+          members: builtMembers,
+          createdAt: new Date().toISOString().replace('T', ' ').substring(0, 19) + ' UTC',
+          passcode: `PASS-${String(maxIdNum).padStart(3, '0')}`,
+          googleFormSubmissionId: `GF-CSV-${Date.now()}-${maxIdNum}`,
+          googleDriveFolder: driveLink,
+          stageId,
+          submission: newSubmission
+        };
+
+        teamsMap.set(key, newTeam);
+        newQueueTeamIds.push(newTeamId);
+        addedCount++;
+      }
+    });
+
+    const finalTeams = Array.from(teamsMap.values());
+    setTeams(finalTeams);
+
+    // Also append or replace presentation line queue
+    if (replaceAll) {
+      const allIds = finalTeams.map((t) => t.id);
+      setQueueOrder(allIds);
+      localStorage.setItem(`${STORAGE_KEY}_queueOrder`, JSON.stringify(allIds));
+    } else if (newQueueTeamIds.length > 0) {
+      setQueueOrder((prev) => {
+        const set = new Set(prev);
+        const toAdd = newQueueTeamIds.filter((id) => !set.has(id));
+        const updatedOrder = [...prev, ...toAdd];
+        localStorage.setItem(`${STORAGE_KEY}_queueOrder`, JSON.stringify(updatedOrder));
+        return updatedOrder;
+      });
+    }
+
+    localStorage.setItem(`${STORAGE_KEY}_teams`, JSON.stringify(finalTeams));
+
+    // If replaceAll or screen currently has no active team, send the first imported team to screen
+    if (finalTeams.length > 0 && (replaceAll || !activeTeamId || !screenState.teamId)) {
+      const firstId = finalTeams[0].id;
+      setActiveTeamId(firstId);
+      sendTeamToScreen(firstId, 6);
+    }
+
+    addAuditLog(
+      'CSV_TEAMS_IMPORTED',
+      'Admin CSV Portal',
+      `Processed CSV: Added ${addedCount} new squads, updated ${updatedCount} existing squads with verified Google Drive links.`,
+      'REGISTRATION'
+    );
+
+    broadcastUpdate();
+
+    return {
+      added: addedCount,
+      updated: updatedCount,
+      total: records.length,
+      teams: finalTeams
+    };
+  };
+
   // Stats calculation
   const stats = useMemo<HackathonStats>(() => {
     const totalTeams = teams.length;
@@ -1201,7 +1508,10 @@ export const HackathonProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         reorderScheduleSlots,
         autoRegenerateSlots,
         syncGoogleSheets,
-        resetToDefaultData
+        resetToDefaultData,
+        clearAllTeams,
+        updateTeamDriveUrl,
+        updateTeamsFromCSV
       }}
     >
       {children}

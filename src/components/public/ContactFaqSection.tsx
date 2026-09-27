@@ -19,7 +19,7 @@ export const ContactFaqSection: React.FC = () => {
     },
     {
       q: 'How does the automated 6-minute presentation engine work?',
-      a: 'To guarantee absolute fairness across all teams, presentations run inside our standardized PresentationRenderer. Exactly 6 slides are loaded (60 seconds per slide). When the 6-minute clock expires, the engine locks and transitions to judging scores.'
+      a: 'To guarantee absolute fairness across all teams, presentations embed the team’s original Google Drive presentation deck with automated stage countdown timers and slide cadence markers (10s, 1m, 1m, 40s, 40s, 20s). When the 6-minute pitch completes, the auditorium screen signals completion.'
     },
     {
       q: 'How is Google Drive integrated with our team account?',

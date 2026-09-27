@@ -9,10 +9,10 @@ import {
   Sparkles,
   ShieldCheck,
   Play,
-  Trophy,
   Sliders,
   Tv,
-  Users
+  Users,
+  FileSpreadsheet
 } from 'lucide-react';
 import { InstitutionalHeader } from './InstitutionalHeader';
 
@@ -20,21 +20,21 @@ interface NavbarProps {
   currentTab: string;
   onNavigate: (tab: string) => void;
   onLaunchLivePitch?: () => void;
+  onOpenCSVUpload?: () => void;
 }
 
-export const Navbar: React.FC<NavbarProps> = ({ currentTab, onNavigate, onLaunchLivePitch }) => {
+export const Navbar: React.FC<NavbarProps> = ({ currentTab, onNavigate, onLaunchLivePitch, onOpenCSVUpload }) => {
   const { role, setRole } = useHackathon();
   const [mobileMenuOpen, setMobileMenuOpen] = useState<boolean>(false);
   const [roleDropdownOpen, setRoleDropdownOpen] = useState<boolean>(false);
 
-  // The two core portals requested by user: Admin Portal & Screen Portal
+  // The core portals: Admin Portal, Screen Portal, Stage, Teams, Schedule, Vault
   const navLinks = [
     { id: 'admin', label: '⚙️ ADMIN LINE PORTAL' },
     { id: 'screen', label: '🖥️ SCREEN PORTAL (PROJECTOR)' },
     { id: 'home', label: 'STAGE OVERVIEW' },
     { id: 'teams', label: 'TEAM DECKS' },
     { id: 'schedule', label: '6-MIN CADENCE' },
-    { id: 'judges', label: 'JUDGE EVALUATION' },
     { id: 'team-portal', label: 'REHEARSAL VAULT' }
   ];
 
@@ -93,6 +93,21 @@ export const Navbar: React.FC<NavbarProps> = ({ currentTab, onNavigate, onLaunch
 
           {/* Right Action: Quick Switch between Admin & Screen */}
           <div className="flex items-center gap-2.5">
+            <button
+              onClick={() => {
+                if (onOpenCSVUpload) {
+                  onOpenCSVUpload();
+                } else {
+                  onNavigate('admin');
+                }
+              }}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-orange-600 hover:bg-orange-500 text-xs font-bold text-white transition-colors cursor-pointer shadow-xs"
+              title="Insert squads from CSV file"
+            >
+              <FileSpreadsheet className="w-3.5 h-3.5 stroke-[2.5]" />
+              <span>Insert CSV</span>
+            </button>
+
             <button
               onClick={() => onNavigate(currentTab === 'screen' ? 'admin' : 'screen')}
               className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-orange-100/80 border border-orange-200 text-xs font-bold text-orange-800 hover:bg-orange-200 transition-colors cursor-pointer"

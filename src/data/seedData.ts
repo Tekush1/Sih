@@ -9,7 +9,7 @@ export const STAGES_INITIAL: Stage[] = [
     location: 'TIT Main Auditorium · Quantum Arena',
     status: 'ACTIVE',
     operatorName: 'Dr. Sarah Vance (TIT CSE)',
-    currentTeamId: 'SH26-001'
+    currentTeamId: ''
   },
   {
     id: 'stage-beta',
@@ -18,7 +18,7 @@ export const STAGES_INITIAL: Stage[] = [
     location: 'TIT Cyber Block · Pavilion B',
     status: 'ACTIVE',
     operatorName: 'Prof. Alex Mercer (TIT IT)',
-    currentTeamId: 'SH26-005'
+    currentTeamId: ''
   },
   {
     id: 'stage-gamma',
@@ -27,7 +27,7 @@ export const STAGES_INITIAL: Stage[] = [
     location: 'TIT BioTech Wing · Hall C',
     status: 'ACTIVE',
     operatorName: 'Dr. Elena Rostova (TIT EC)',
-    currentTeamId: 'SH26-009'
+    currentTeamId: ''
   },
   {
     id: 'stage-delta',
@@ -36,7 +36,7 @@ export const STAGES_INITIAL: Stage[] = [
     location: 'TIT Central Innovation Hub · Hall D',
     status: 'ACTIVE',
     operatorName: 'Prof. Marcus Thorne (TIT ME/IoT)',
-    currentTeamId: 'SH26-013'
+    currentTeamId: ''
   }
 ];
 
@@ -282,6 +282,11 @@ async fn verify_and_dispatch(packet: TelemetryPacket) -> Result<VerifiedState, E
 }
 
 export function generateSeedTeams(): { teams: Team[]; schedules: ScheduleSlot[]; auditLogs: AuditLog[] } {
+  // Purged fake data: returns empty arrays so user can insert real CSV
+  return { teams: [], schedules: [], auditLogs: [] };
+}
+
+function _unusedSeedTeams(): { teams: Team[]; schedules: ScheduleSlot[]; auditLogs: AuditLog[] } {
   const teams: Team[] = [];
   const schedules: ScheduleSlot[] = [];
   const auditLogs: AuditLog[] = [];

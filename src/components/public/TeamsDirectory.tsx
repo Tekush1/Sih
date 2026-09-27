@@ -16,9 +16,11 @@ import {
   Users,
   Globe,
   Building2,
-  Sparkles
+  Sparkles,
+  FileSpreadsheet
 } from 'lucide-react';
 import { QRPassModal } from '../qr/QRPassModal';
+import { CSVUploadModal } from '../admin/CSVUploadModal';
 
 interface TeamsDirectoryProps {
   initialTrack?: TeamTrack | null;
@@ -33,6 +35,7 @@ export const TeamsDirectory: React.FC<TeamsDirectoryProps> = ({ initialTrack, on
   const [selectedStatus, setSelectedStatus] = useState<string>('ALL');
   const [selectedTeamModal, setSelectedTeamModal] = useState<Team | null>(null);
   const [qrPassTeam, setQrPassTeam] = useState<Team | null>(null);
+  const [showCSVModal, setShowCSVModal] = useState<boolean>(false);
 
   const filteredTeams = useMemo(() => {
     return teams.filter((t) => {
@@ -131,107 +134,130 @@ export const TeamsDirectory: React.FC<TeamsDirectoryProps> = ({ initialTrack, on
         </div>
       </div>
 
-      {/* Teams Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-        {filteredTeams.slice(0, 48).map((team) => {
-          const isApproved = team.submission?.status === 'APPROVED';
-          const isCompleted = team.scheduledSlot?.status === 'COMPLETED';
-          const isPresenting = team.scheduledSlot?.status === 'IN_PROGRESS';
-          const assignedStage = stages.find((s) => s.id === team.stageId);
+      {/* Teams Grid or Empty State */}
+      {filteredTeams.length === 0 ? (
+        <div className="p-12 text-center rounded-3xl bg-white border-2 border-dashed border-orange-300/80 space-y-4 max-w-xl mx-auto shadow-xs">
+          <div className="w-16 h-16 rounded-2xl bg-orange-100 border border-orange-200 text-orange-600 flex items-center justify-center mx-auto shadow-sm">
+            <FileSpreadsheet className="w-8 h-8 stroke-[2.5]" />
+          </div>
 
-          return (
-            <div
-              key={team.id}
-              className="p-5 rounded-2xl bg-white border border-slate-200/90 hover:border-orange-400 hover:shadow-md transition-all duration-200 flex flex-col justify-between space-y-4 group cursor-pointer shadow-xs"
-              onClick={() => setSelectedTeamModal(team)}
-            >
-              <div>
-                {/* Card Top: ID and Status */}
-                <div className="flex items-center justify-between gap-2 mb-2.5">
-                  <div className="flex items-center gap-1.5">
-                    <span className="px-2.5 py-0.5 rounded bg-orange-100 border border-orange-200 text-orange-800 font-mono text-xs font-bold">
-                      {team.id}
-                    </span>
-                    <span className="px-2 py-0.5 rounded bg-blue-50 border border-blue-200 text-blue-700 font-mono text-[11px] font-bold">
-                      {team.psId || 'SIH1609'}
-                    </span>
-                  </div>
+          <div className="space-y-1">
+            <h3 className="text-xl font-black text-slate-900">No Squads Registered Yet</h3>
+            <p className="text-xs text-slate-600 leading-relaxed">
+              Dummy data has been cleared. Insert your real CSV file containing <strong>Team Name</strong>, <strong>Track</strong>, and <strong>Google Drive Link</strong> to populate the directory.
+            </p>
+          </div>
 
-                  <span className="text-xs font-mono">
-                    {isPresenting ? (
-                      <span className="text-orange-600 font-bold animate-pulse flex items-center gap-1">
-                        <span className="w-2 h-2 rounded-full bg-orange-500 animate-ping" /> PRESENTING
+          <button
+            onClick={() => setShowCSVModal(true)}
+            className="px-6 py-3 rounded-2xl bg-orange-600 hover:bg-orange-500 text-white font-extrabold text-sm flex items-center gap-2 mx-auto shadow-lg shadow-orange-600/25 cursor-pointer ring-2 ring-orange-400/40"
+          >
+            <FileSpreadsheet className="w-4 h-4 stroke-[3]" />
+            <span>Insert CSV File Now</span>
+          </button>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+          {filteredTeams.slice(0, 48).map((team) => {
+            const isApproved = team.submission?.status === 'APPROVED';
+            const isCompleted = team.scheduledSlot?.status === 'COMPLETED';
+            const isPresenting = team.scheduledSlot?.status === 'IN_PROGRESS';
+            const assignedStage = stages.find((s) => s.id === team.stageId);
+
+            return (
+              <div
+                key={team.id}
+                className="p-5 rounded-2xl bg-white border border-slate-200/90 hover:border-orange-400 hover:shadow-md transition-all duration-200 flex flex-col justify-between space-y-4 group cursor-pointer shadow-xs"
+                onClick={() => setSelectedTeamModal(team)}
+              >
+                <div>
+                  {/* Card Top: ID and Status */}
+                  <div className="flex items-center justify-between gap-2 mb-2.5">
+                    <div className="flex items-center gap-1.5">
+                      <span className="px-2.5 py-0.5 rounded bg-orange-100 border border-orange-200 text-orange-800 font-mono text-xs font-bold">
+                        {team.id}
                       </span>
-                    ) : isCompleted ? (
-                      <span className="text-emerald-700 font-bold">COMPLETED</span>
-                    ) : isApproved ? (
-                      <span className="text-blue-700 font-bold">APPROVED</span>
-                    ) : (
-                      <span className="text-slate-400">UNDER REVIEW</span>
-                    )}
-                  </span>
-                </div>
+                      <span className="px-2.5 py-0.5 rounded bg-blue-50 border border-blue-200 text-blue-700 font-mono text-[11px] font-bold">
+                        {team.psId || 'SIH1609'}
+                      </span>
+                    </div>
 
-                {/* Team Name & College */}
-                <h3 className="text-lg font-bold text-slate-900 group-hover:text-orange-600 transition-colors leading-snug">
-                  {team.name}
-                </h3>
-                <p className="text-xs text-slate-500 truncate mt-0.5 flex items-center gap-1">
-                  <Building2 className="w-3 h-3 text-slate-400 shrink-0" />
-                  <span className="truncate">{team.college}</span>
-                </p>
-
-                {/* Ministry / Org Tag */}
-                {team.sihOrganization && (
-                  <p className="text-[11px] text-orange-700 font-mono font-medium mt-1.5 truncate">
-                    🏛 {team.sihOrganization}
-                  </p>
-                )}
-
-                {/* Problem Statement Snippet */}
-                <p className="text-xs text-slate-600 mt-2.5 line-clamp-2 leading-relaxed font-sans">
-                  {team.problemStatement}
-                </p>
-              </div>
-
-              {/* Card Bottom Meta */}
-              <div className="pt-3 border-t border-slate-100 space-y-2 text-xs">
-                <div className="flex items-center justify-between text-slate-500">
-                  <span className="text-orange-700 font-bold truncate max-w-[150px]">{team.track}</span>
-                  <span className="font-mono text-slate-600 flex items-center gap-1 font-semibold">
-                    <Clock className="w-3.5 h-3.5 text-slate-400" />
-                    {team.scheduledSlot?.startTime || '14:00'}
-                  </span>
-                </div>
-
-                <div className="flex items-center justify-between pt-1">
-                  <span className="text-[11px] font-mono text-slate-500 truncate">
-                    {assignedStage?.name || 'Stage Alpha'}
-                  </span>
-                  
-                  <div className="flex items-center gap-2">
-                    {team.qrPass && (
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setQrPassTeam(team);
-                        }}
-                        title="View Digital QR Pass"
-                        className="p-1 rounded text-orange-600 hover:text-orange-700 hover:bg-orange-50 transition-colors cursor-pointer"
-                      >
-                        <QrCode className="w-4 h-4" />
-                      </button>
-                    )}
-                    <span className="text-orange-600 text-xs font-bold flex items-center gap-0.5 group-hover:translate-x-0.5 transition-transform">
-                      Details <ArrowUpRight className="w-3.5 h-3.5" />
+                    <span className="text-xs font-mono">
+                      {isPresenting ? (
+                        <span className="text-orange-600 font-bold animate-pulse flex items-center gap-1">
+                          <span className="w-2 h-2 rounded-full bg-orange-500 animate-ping" /> PRESENTING
+                        </span>
+                      ) : isCompleted ? (
+                        <span className="text-emerald-700 font-bold">COMPLETED</span>
+                      ) : isApproved ? (
+                        <span className="text-blue-700 font-bold">APPROVED</span>
+                      ) : (
+                        <span className="text-slate-400">UNDER REVIEW</span>
+                      )}
                     </span>
+                  </div>
+
+                  {/* Team Name & College */}
+                  <h3 className="text-lg font-bold text-slate-900 group-hover:text-orange-600 transition-colors leading-snug">
+                    {team.name}
+                  </h3>
+                  <p className="text-xs text-slate-500 truncate mt-0.5 flex items-center gap-1">
+                    <Building2 className="w-3 h-3 text-slate-400 shrink-0" />
+                    <span className="truncate">{team.college}</span>
+                  </p>
+
+                  {/* Ministry / Org Tag */}
+                  {team.sihOrganization && (
+                    <p className="text-[11px] text-orange-700 font-mono font-medium mt-1.5 truncate">
+                      🏛 {team.sihOrganization}
+                    </p>
+                  )}
+
+                  {/* Problem Statement Snippet */}
+                  <p className="text-xs text-slate-600 mt-2.5 line-clamp-2 leading-relaxed font-sans">
+                    {team.problemStatement}
+                  </p>
+                </div>
+
+                {/* Card Bottom Meta */}
+                <div className="pt-3 border-t border-slate-100 space-y-2 text-xs">
+                  <div className="flex items-center justify-between text-slate-500">
+                    <span className="text-orange-700 font-bold truncate max-w-[150px]">{team.track}</span>
+                    <span className="font-mono text-slate-600 flex items-center gap-1 font-semibold">
+                      <Clock className="w-3.5 h-3.5 text-slate-400" />
+                      {team.scheduledSlot?.startTime || '14:00'}
+                    </span>
+                  </div>
+
+                  <div className="flex items-center justify-between pt-1">
+                    <span className="text-[11px] font-mono text-slate-500 truncate">
+                      {assignedStage?.name || 'Stage Alpha'}
+                    </span>
+                    
+                    <div className="flex items-center gap-2">
+                      {team.qrPass && (
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setQrPassTeam(team);
+                          }}
+                          title="View Digital QR Pass"
+                          className="p-1 rounded text-orange-600 hover:text-orange-700 hover:bg-orange-50 transition-colors cursor-pointer"
+                        >
+                          <QrCode className="w-4 h-4" />
+                        </button>
+                      )}
+                      <span className="text-orange-600 text-xs font-bold flex items-center gap-0.5 group-hover:translate-x-0.5 transition-transform">
+                        Details <ArrowUpRight className="w-3.5 h-3.5" />
+                      </span>
+                    </div>
                   </div>
                 </div>
               </div>
-            </div>
-          );
-        })}
-      </div>
+            );
+          })}
+        </div>
+      )}
 
       {filteredTeams.length > 48 && (
         <div className="text-center text-xs text-slate-500 font-mono pt-4">
@@ -289,6 +315,20 @@ export const TeamsDirectory: React.FC<TeamsDirectoryProps> = ({ initialTrack, on
               <p className="text-xs text-slate-600 leading-relaxed">
                 {selectedTeamModal.abstract}
               </p>
+
+              {(selectedTeamModal.submission?.googleDriveFileUrl || selectedTeamModal.googleDriveFolder) && (
+                <div className="pt-1">
+                  <a
+                    href={selectedTeamModal.submission?.googleDriveFileUrl || selectedTeamModal.googleDriveFolder}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-blue-50 hover:bg-blue-100 border border-blue-200 text-blue-700 text-xs font-mono font-medium transition-colors"
+                  >
+                    <ExternalLink className="w-3.5 h-3.5" />
+                    <span>Open Pitch Deck on Google Drive</span>
+                  </a>
+                </div>
+              )}
             </div>
 
             {/* Squad Members */}
@@ -367,6 +407,12 @@ export const TeamsDirectory: React.FC<TeamsDirectoryProps> = ({ initialTrack, on
           onClose={() => setQrPassTeam(null)}
         />
       )}
+
+      {/* CSV Upload Modal */}
+      <CSVUploadModal
+        isOpen={showCSVModal}
+        onClose={() => setShowCSVModal(false)}
+      />
     </section>
   );
 };

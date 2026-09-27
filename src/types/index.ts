@@ -13,6 +13,8 @@ export interface TeamMember {
   role: 'LEADER' | 'MEMBER';
   college: string;
   phone: string;
+  enrollment?: string;
+  semester?: string;
   github?: string;
   specialization?: string;
 }
@@ -99,6 +101,10 @@ export interface Team {
   abstract: string;
   leaderName: string;
   leaderEmail: string;
+  leaderPhone?: string;
+  leaderEnrollment?: string;
+  leaderSem?: string;
+  theme?: string;
   members: TeamMember[];
   createdAt: string;
   passcode: string;
@@ -152,4 +158,33 @@ export interface QueueItem {
   customDurationMinutes?: number;
   status: 'NOW_PRESENTING' | 'NEXT_UP' | 'QUEUED' | 'COMPLETED';
   orderIndex: number;
+}
+
+export interface CSVTeamRecord {
+  teamName: string;
+  track: string;
+  googleDriveLink: string;
+  problemStatement?: string;
+  psId?: string;
+  theme?: string;
+  college?: string;
+  leaderName?: string;
+  leaderEmail?: string;
+  leaderPhone?: string;
+  leaderEnrollment?: string;
+  leaderSem?: string;
+  timestamp?: string;
+  membersList?: {
+    name: string;
+    enrollment?: string;
+    phone?: string;
+    email?: string;
+  }[];
+}
+
+export interface CSVImportResult {
+  added: number;
+  updated: number;
+  total: number;
+  teams: Team[];
 }

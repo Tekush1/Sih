@@ -10,16 +10,17 @@ import { Footer } from './components/layout/Footer';
 import { ScreenPortal } from './components/screen/ScreenPortal';
 import { AdminLinePortal } from './components/admin/AdminLinePortal';
 import { PresentationHome } from './components/presentation/PresentationHome';
-import { JudgeEvaluationSection } from './components/presentation/JudgeEvaluationSection';
 import { TeamsDirectory } from './components/public/TeamsDirectory';
 import { ScheduleView } from './components/public/ScheduleView';
 import { TeamPortal } from './components/team/TeamPortal';
 import { StagePortal } from './components/stage/StagePortal';
 import { PresentationEngine } from './components/presentation/PresentationEngine';
+import { CSVUploadModal } from './components/admin/CSVUploadModal';
 import { Team, TeamTrack } from './types';
 
 const MainApp: React.FC = () => {
   const { setActiveTeamId, stages, teams, startPresentation, sendTeamToScreen } = useHackathon();
+  const [showGlobalCSVModal, setShowGlobalCSVModal] = useState<boolean>(false);
 
   // Detect URL parameter for dedicated screen view (e.g. ?portal=screen or ?view=screen)
   const [currentTab, setCurrentTab] = useState<string>(() => {
@@ -57,6 +58,7 @@ const MainApp: React.FC = () => {
         <Navbar
           currentTab={currentTab}
           onNavigate={(tab) => setCurrentTab(tab)}
+          onOpenCSVUpload={() => setShowGlobalCSVModal(true)}
           onLaunchLivePitch={() => {
             sendTeamToScreen(teams[0]?.id || 'SH26-001', 6);
             setCurrentTab('screen');
@@ -119,10 +121,6 @@ const MainApp: React.FC = () => {
           <ScheduleView onLaunchPresentation={handleLaunchPresentation} />
         )}
 
-        {currentTab === 'judges' && (
-          <JudgeEvaluationSection onLaunchPresentation={handleLaunchPresentation} />
-        )}
-
         {currentTab === 'team-portal' && <TeamPortal />}
       </main>
 
@@ -147,6 +145,11 @@ const MainApp: React.FC = () => {
           }}
         />
       )}
+      {/* Global CSV Upload Modal accessible anywhere via Navbar or Portals */}
+      <CSVUploadModal
+        isOpen={showGlobalCSVModal}
+        onClose={() => setShowGlobalCSVModal(false)}
+      />
     </div>
   );
 };

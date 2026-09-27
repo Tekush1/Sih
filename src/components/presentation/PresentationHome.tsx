@@ -15,13 +15,13 @@ import {
   Building2,
   Cpu,
   ShieldCheck,
-  Trophy,
   Search,
   Sparkles,
   QrCode,
   FileText,
   Sliders,
-  AlertCircle
+  AlertCircle,
+  FileSpreadsheet
 } from 'lucide-react';
 import { SIHProblemModal } from '../sih/SIHProblemModal';
 import { PresentationRenderer } from './PresentationRenderer';
@@ -148,13 +148,13 @@ export const PresentationHome: React.FC<PresentationHomeProps> = ({
               Technocrats Institute of Technology
             </h1>
             <div className="text-2xl sm:text-4xl md:text-5xl font-extrabold tracking-tight text-[#b47e3a]">
-              6-Minute Stage Pitch &amp; Evaluation Engine
+              6-Minute Stage Pitch &amp; Screen Engine
             </div>
           </div>
 
           {/* Subtitle */}
           <p className="max-w-3xl mx-auto text-sm sm:text-base text-slate-600 leading-relaxed font-normal">
-            Automated 6-slide countdown (60s/slide), deterministic 4-stage arena scheduling, live SIH 2026 problem statement validation, digital QR passes, and jury evaluation rubrics for 128 competing TIT squads.
+            Automated 6-slide countdown (60s/slide), deterministic 4-stage arena scheduling, live SIH 2026 problem statement validation, digital QR passes, and synchronized projector screen displays for 128 competing TIT squads.
           </p>
 
           {/* Action CTAs */}
@@ -168,19 +168,19 @@ export const PresentationHome: React.FC<PresentationHomeProps> = ({
             </button>
 
             <button
-              onClick={() => onNavigate('stage-portal')}
+              onClick={() => onNavigate('admin')}
               className="px-6 py-3.5 rounded-2xl bg-white hover:bg-slate-50 border-2 border-orange-500/60 text-orange-700 font-bold text-sm sm:text-base transition-all shadow-xs flex items-center gap-2 cursor-pointer"
             >
-              <ShieldCheck className="w-4 h-4 text-orange-600" />
-              <span>Stage Marshal Console</span>
+              <FileSpreadsheet className="w-4 h-4 text-orange-600" />
+              <span>Admin Line &amp; CSV Upload</span>
             </button>
 
             <button
-              onClick={() => onNavigate('judges')}
+              onClick={() => onNavigate('stage-portal')}
               className="px-5 py-3.5 rounded-2xl bg-[#faf7f2] hover:bg-slate-100 border border-slate-300 text-slate-800 font-bold text-sm transition-all flex items-center gap-2 cursor-pointer"
             >
-              <Trophy className="w-4 h-4 text-amber-600" />
-              <span>Judge Scoring Room</span>
+              <ShieldCheck className="w-4 h-4 text-slate-700" />
+              <span>Stage Marshal Console</span>
             </button>
 
             <button
@@ -367,71 +367,72 @@ export const PresentationHome: React.FC<PresentationHomeProps> = ({
       {/* Interactive Deck Simulator */}
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-6">
         <div className="p-6 md:p-8 rounded-3xl bg-white border border-slate-200/90 shadow-xs space-y-6">
-          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-100 pb-4">
-            <div>
-              <div className="flex items-center gap-2 text-xs font-mono font-bold text-orange-600 mb-1">
-                <Sparkles className="w-3.5 h-3.5" />
-                <span>INTERACTIVE SLIDE ENGINE PREVIEW</span>
+          {previewTeam ? (
+            <>
+              <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-100 pb-4">
+                <div>
+                  <div className="flex items-center gap-2 text-xs font-mono font-bold text-orange-600 mb-1">
+                    <Sparkles className="w-3.5 h-3.5" />
+                    <span>ORIGINAL GOOGLE DRIVE DECK PREVIEW</span>
+                  </div>
+                  <h3 className="text-xl font-black text-slate-900">
+                    Preview Squad Pitch Deck: {previewTeam.name} ({previewTeam.id})
+                  </h3>
+                  <p className="text-xs text-slate-500">
+                    {previewTeam.college} · PS: <strong className="text-orange-700 font-mono">{previewTeam.psId || 'SIH1609'}</strong> ({previewTeam.sihOrganization || 'AICTE'})
+                  </p>
+                </div>
+
+                {/* Quick Switcher & Launch */}
+                <div className="flex flex-wrap items-center gap-2">
+                  <select
+                    value={previewTeam.id}
+                    onChange={(e) => setSelectedPreviewTeamId(e.target.value)}
+                    className="px-3 py-1.5 rounded-xl bg-[#faf7f2] border border-slate-200 text-xs font-mono font-bold text-orange-700 focus:outline-none"
+                  >
+                    {teams.slice(0, 15).map((t) => (
+                      <option key={t.id} value={t.id}>
+                        {t.id} - {t.name} [{t.psId || 'SIH'}]
+                      </option>
+                    ))}
+                  </select>
+
+                  <button
+                    onClick={() => onLaunchPresentation(previewTeam.id, previewTeam.stageId || 'stage-alpha')}
+                    className="px-4 py-2 rounded-xl bg-orange-600 hover:bg-orange-500 text-white font-bold text-xs flex items-center gap-1.5 transition-colors cursor-pointer shadow-xs"
+                  >
+                    <Play className="w-3.5 h-3.5 fill-current" />
+                    <span>Present Fullscreen</span>
+                  </button>
+                </div>
               </div>
-              <h3 className="text-xl font-black text-slate-900">
-                Preview Squad Pitch Deck: {previewTeam.name} ({previewTeam.id})
-              </h3>
-              <p className="text-xs text-slate-500">
-                {previewTeam.college} · PS: <strong className="text-orange-700 font-mono">{previewTeam.psId || 'SIH1609'}</strong> ({previewTeam.sihOrganization || 'AICTE'})
-              </p>
-            </div>
 
-            {/* Quick Switcher & Launch */}
-            <div className="flex flex-wrap items-center gap-2">
-              <select
-                value={previewTeam.id}
-                onChange={(e) => setSelectedPreviewTeamId(e.target.value)}
-                className="px-3 py-1.5 rounded-xl bg-[#faf7f2] border border-slate-200 text-xs font-mono font-bold text-orange-700 focus:outline-none"
-              >
-                {teams.slice(0, 15).map((t) => (
-                  <option key={t.id} value={t.id}>
-                    {t.id} - {t.name} [{t.psId || 'SIH'}]
-                  </option>
-                ))}
-              </select>
-
+              {/* Embedded Original Presentation Deck Preview */}
+              <div className="rounded-2xl overflow-hidden border border-slate-800 bg-slate-950">
+                <PresentationRenderer
+                  team={previewTeam}
+                />
+              </div>
+            </>
+          ) : (
+            <div className="p-8 text-center space-y-4">
+              <div className="w-14 h-14 rounded-2xl bg-orange-50 border border-orange-200 text-orange-600 mx-auto flex items-center justify-center">
+                <Sparkles className="w-6 h-6" />
+              </div>
+              <div className="max-w-md mx-auto space-y-1">
+                <h3 className="text-lg font-black text-slate-900">No Squads in Lineup Yet</h3>
+                <p className="text-xs text-slate-500">
+                  Insert your CSV file containing Team Name, Track, and Google Drive links to preview original presentation decks.
+                </p>
+              </div>
               <button
-                onClick={() => onLaunchPresentation(previewTeam.id, previewTeam.stageId || 'stage-alpha')}
-                className="px-4 py-2 rounded-xl bg-orange-600 hover:bg-orange-500 text-white font-bold text-xs flex items-center gap-1.5 transition-colors cursor-pointer shadow-xs"
+                onClick={() => onNavigate('admin')}
+                className="px-5 py-2.5 rounded-xl bg-orange-600 hover:bg-orange-500 text-white font-extrabold text-xs transition-colors cursor-pointer inline-flex items-center gap-2"
               >
-                <Play className="w-3.5 h-3.5 fill-current" />
-                <span>Present Fullscreen</span>
+                <span>Go to Admin Line &amp; Insert CSV</span>
               </button>
             </div>
-          </div>
-
-          {/* Slide Tab Controls */}
-          <div className="flex flex-wrap items-center gap-1.5 border-b border-slate-100 pb-3">
-            {[0, 1, 2, 3, 4, 5].map((idx) => (
-              <button
-                key={idx}
-                onClick={() => setActiveSlideIdx(idx)}
-                className={`px-3.5 py-1.5 rounded-xl text-xs font-mono font-bold transition-all cursor-pointer ${
-                  activeSlideIdx === idx
-                    ? 'bg-orange-600 text-white shadow-2xs'
-                    : 'bg-[#faf7f2] hover:bg-slate-100 text-slate-600 border border-slate-200'
-                }`}
-              >
-                0{idx + 1} {idx === 0 ? 'Problem' : idx === 1 ? 'Solution' : idx === 2 ? 'Tech' : idx === 3 ? 'Demo' : idx === 4 ? 'Feasibility' : 'Roadmap'}
-              </button>
-            ))}
-          </div>
-
-          {/* Embedded Slide Preview */}
-          <div className="rounded-2xl bg-slate-950 p-6 md:p-8 min-h-[380px] flex items-center justify-center overflow-hidden border border-slate-800">
-            {previewTeam.submission?.slides && (
-              <PresentationRenderer
-                slide={previewTeam.submission.slides[activeSlideIdx] || previewTeam.submission.slides[0]}
-                team={previewTeam}
-                slideTimeRemaining={54}
-              />
-            )}
-          </div>
+          )}
         </div>
       </section>
 

@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import confetti from 'canvas-confetti';
 import { Team, Stage } from '../../types';
-import { PresentationRenderer } from './PresentationRenderer';
+import { GoogleDriveDeckViewer } from './GoogleDriveDeckViewer';
 import { useHackathon } from '../../context/HackathonContext';
 import { 
   Play, 
@@ -17,8 +17,8 @@ import {
   CheckCircle2, 
   Clock, 
   AlertTriangle,
-  Award,
-  ArrowRight
+  ArrowRight,
+  ExternalLink
 } from 'lucide-react';
 
 interface PresentationEngineProps {
@@ -34,7 +34,7 @@ export const PresentationEngine: React.FC<PresentationEngineProps> = ({
   onClose,
   onNextTeam
 }) => {
-  const { completePresentation, schedules } = useHackathon();
+  const { completePresentation, schedules, updateTeamDriveUrl } = useHackathon();
 
   // 3, 2, 1 Countdown state
   const [countdown, setCountdown] = useState<number>(3);
@@ -51,13 +51,6 @@ export const PresentationEngine: React.FC<PresentationEngineProps> = ({
   const [isCompleted, setIsCompleted] = useState<boolean>(false);
   const [isFullscreen, setIsFullscreen] = useState<boolean>(false);
   const [soundEnabled, setSoundEnabled] = useState<boolean>(true);
-
-  // Judging scoring input upon completion
-  const [innovationScore, setInnovationScore] = useState<number>(24);
-  const [technicalScore, setTechnicalScore] = useState<number>(23);
-  const [feasibilityScore, setFeasibilityScore] = useState<number>(24);
-  const [presentationScore, setPresentationScore] = useState<number>(24);
-  const [judgeNotes, setJudgeNotes] = useState<string>('Strong technical architecture and smooth automated demonstration.');
 
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -178,13 +171,7 @@ export const PresentationEngine: React.FC<PresentationEngineProps> = ({
   };
 
   const handleFinishAndSave = () => {
-    completePresentation(team.id, stage.id, {
-      innovation: innovationScore,
-      technical: technicalScore,
-      feasibility: feasibilityScore,
-      presentation: presentationScore,
-      judgeNotes
-    });
+    completePresentation(team.id, stage.id);
 
     // Check next team
     const nextSlot = schedules
@@ -345,12 +332,14 @@ export const PresentationEngine: React.FC<PresentationEngineProps> = ({
         </div>
       </header>
 
-      {/* Main Slide Content Canvas */}
-      <main className="flex-1 overflow-hidden relative flex items-center justify-center">
-        <PresentationRenderer
-          slide={currentSlide}
-          team={team}
-          slideTimeRemaining={currentSlideTimeRemaining}
+      {/* Original Google Drive Presentation Deck */}
+      <main className="flex-1 overflow-hidden relative flex flex-col p-3 sm:p-5">
+        <GoogleDriveDeckViewer
+          driveUrl={team.googleDriveFolder || team.submission?.googleDriveFileUrl}
+          teamName={team.name}
+          teamId={team.id}
+          track={team.track}
+          onUpdateDriveUrl={(newUrl) => updateTeamDriveUrl(team.id, newUrl)}
         />
       </main>
 
@@ -492,89 +481,43 @@ export const PresentationEngine: React.FC<PresentationEngineProps> = ({
               </p>
             </div>
 
-            {/* Judging Evaluation Sliders */}
-            <div className="p-4 rounded-xl bg-slate-950 border border-slate-800/80 space-y-3.5">
+            {/* Pitch Completion Verification */}
+            <div className="p-4 rounded-xl bg-slate-950 border border-slate-800/80 space-y-3">
               <div className="flex items-center justify-between text-xs font-medium text-slate-300">
                 <span className="flex items-center gap-1.5 font-mono text-cyan-400">
-                  <Award className="w-4 h-4" />
-                  EVALUATION RUBRIC (OUT OF 100)
+                  <Clock className="w-4 h-4" />
+                  CADENCE VERIFICATION
                 </span>
-                <span className="font-mono text-base font-bold text-white tabular-nums">
-                  {innovationScore + technicalScore + feasibilityScore + presentationScore}/100
+                <span className="font-mono text-sm font-bold text-emerald-400">
+                  6:00 ELAPSED · 100% TIMED
                 </span>
               </div>
 
               <div className="grid grid-cols-2 gap-3 text-xs">
-                <div>
-                  <div className="flex justify-between text-slate-400 mb-1">
-                    <span>Innovation (25)</span>
-                    <span className="font-mono text-cyan-300">{innovationScore}</span>
-                  </div>
-                  <input
-                    type="range"
-                    min="15"
-                    max="25"
-                    value={innovationScore}
-                    onChange={(e) => setInnovationScore(Number(e.target.value))}
-                    className="w-full accent-cyan-400 cursor-pointer"
-                  />
+                <div className="p-3 rounded-lg bg-slate-900 border border-slate-800">
+                  <span className="text-[11px] text-slate-400 block font-mono">Slides Delivered</span>
+                  <span className="font-mono text-base font-bold text-white">6 / 6 Slides</span>
                 </div>
 
-                <div>
-                  <div className="flex justify-between text-slate-400 mb-1">
-                    <span>Technical Rigor (25)</span>
-                    <span className="font-mono text-cyan-300">{technicalScore}</span>
-                  </div>
-                  <input
-                    type="range"
-                    min="15"
-                    max="25"
-                    value={technicalScore}
-                    onChange={(e) => setTechnicalScore(Number(e.target.value))}
-                    className="w-full accent-cyan-400 cursor-pointer"
-                  />
-                </div>
-
-                <div>
-                  <div className="flex justify-between text-slate-400 mb-1">
-                    <span>Feasibility &amp; ROI (25)</span>
-                    <span className="font-mono text-orange-400 font-bold">{feasibilityScore}</span>
-                  </div>
-                  <input
-                    type="range"
-                    min="15"
-                    max="25"
-                    value={feasibilityScore}
-                    onChange={(e) => setFeasibilityScore(Number(e.target.value))}
-                    className="w-full accent-orange-500 cursor-pointer"
-                  />
-                </div>
-
-                <div>
-                  <div className="flex justify-between text-slate-400 mb-1">
-                    <span>Presentation &amp; Demo (25)</span>
-                    <span className="font-mono text-orange-400 font-bold">{presentationScore}</span>
-                  </div>
-                  <input
-                    type="range"
-                    min="15"
-                    max="25"
-                    value={presentationScore}
-                    onChange={(e) => setPresentationScore(Number(e.target.value))}
-                    className="w-full accent-orange-500 cursor-pointer"
-                  />
+                <div className="p-3 rounded-lg bg-slate-900 border border-slate-800">
+                  <span className="text-[11px] text-slate-400 block font-mono">Stage Track</span>
+                  <span className="font-mono text-base font-bold text-orange-400">{team.track}</span>
                 </div>
               </div>
 
-              <div>
-                <label className="block text-[11px] text-slate-400 mb-1 font-mono">Judge Feedback Notes</label>
-                <input
-                  type="text"
-                  value={judgeNotes}
-                  onChange={(e) => setJudgeNotes(e.target.value)}
-                  className="w-full px-3 py-1.5 rounded-lg bg-slate-900 border border-slate-800 text-xs text-white focus:outline-none focus:border-orange-500"
-                />
-              </div>
+              {team.googleDriveFolder && (
+                <div className="pt-1">
+                  <a
+                    href={team.googleDriveFolder}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-xs font-mono text-blue-400 hover:underline flex items-center gap-1.5 truncate"
+                  >
+                    <span>View Pitch Assets on Google Drive</span>
+                    <ExternalLink className="w-3.5 h-3.5 shrink-0" />
+                  </a>
+                </div>
+              )}
             </div>
 
             {/* Action Buttons */}
@@ -583,13 +526,13 @@ export const PresentationEngine: React.FC<PresentationEngineProps> = ({
                 onClick={handleFinishAndSave}
                 className="flex-1 py-3 rounded-xl bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white font-bold text-sm transition-all flex items-center justify-center gap-2 shadow-lg shadow-orange-500/20 cursor-pointer"
               >
-                <span>Save Evaluation &amp; Advance Next Team</span>
+                <span>Advance to Next Team</span>
                 <ArrowRight className="w-4 h-4" />
               </button>
 
               <button
                 onClick={onClose}
-                className="px-4 py-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-sm font-medium transition-colors"
+                className="px-4 py-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-sm font-medium transition-colors cursor-pointer"
               >
                 Exit to Stage
               </button>

@@ -41,8 +41,11 @@ export const Footer: React.FC<FooterProps> = ({ onNavigate }) => {
           <button onClick={() => onNavigate('schedule')} className="hover:text-orange-600 transition-colors cursor-pointer">
             6-Min Schedule
           </button>
-          <button onClick={() => onNavigate('judges')} className="hover:text-orange-600 transition-colors cursor-pointer">
-            Judge Evaluation Room
+          <button onClick={() => onNavigate('admin')} className="hover:text-orange-600 transition-colors cursor-pointer">
+            Admin Line Portal
+          </button>
+          <button onClick={() => onNavigate('screen')} className="hover:text-orange-600 transition-colors cursor-pointer">
+            Projector Screen
           </button>
           <button onClick={() => onNavigate('team-portal')} className="hover:text-orange-600 transition-colors cursor-pointer">
             Presenter Rehearsal
