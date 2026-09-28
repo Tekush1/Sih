@@ -1,6 +1,6 @@
 import React from 'react';
 import { Team } from '../../types';
-import { Tv, ArrowUp, ArrowDown, Trash2, Edit3, ExternalLink } from 'lucide-react';
+import { ArrowUp, ArrowDown, Trash2, Play, ExternalLink, HardDrive } from 'lucide-react';
 
 interface AdminLineQueueTableProps {
   queueTeams: Team[];
@@ -8,7 +8,7 @@ interface AdminLineQueueTableProps {
   onSendToScreen: (teamId: string) => void;
   onReorder: (teamId: string, direction: 'up' | 'down') => void;
   onRemove: (teamId: string) => void;
-  onEditSlide: (team: Team) => void;
+  onOpenCSV?: () => void;
 }
 
 export const AdminLineQueueTable: React.FC<AdminLineQueueTableProps> = ({
@@ -17,126 +17,167 @@ export const AdminLineQueueTable: React.FC<AdminLineQueueTableProps> = ({
   onSendToScreen,
   onReorder,
   onRemove,
-  onEditSlide
+  onOpenCSV
 }) => {
   if (queueTeams.length === 0) {
     return (
-      <div className="p-12 text-center text-xs text-slate-500 font-mono border border-dashed border-slate-300 rounded-3xl bg-white">
-        No squads currently in the lineup queue. Insert squads above or import a CSV file.
+      <div className="p-16 text-center rounded-3xl bg-white border border-dashed border-slate-300 space-y-4">
+        <p className="text-base font-bold text-slate-700">No squads in the standings lineup yet.</p>
+        <p className="text-xs text-slate-500 max-w-sm mx-auto">
+          Upload your CSV file containing team names and presentation links to automatically generate the standings.
+        </p>
+        {onOpenCSV && (
+          <button
+            onClick={onOpenCSV}
+            className="px-5 py-2.5 rounded-xl bg-orange-600 hover:bg-orange-500 text-white font-bold text-xs cursor-pointer shadow-xs"
+          >
+            Insert Teams via CSV
+          </button>
+        )}
       </div>
     );
   }
 
   return (
     <div className="rounded-3xl bg-white border border-slate-200/90 overflow-hidden shadow-xs">
+      <div className="p-4 px-6 border-b border-slate-100 flex items-center justify-between bg-[#faf7f2]">
+        <h3 className="font-black text-slate-900 text-sm tracking-wide uppercase">
+          Squad Standings ({queueTeams.length} Teams in Line)
+        </h3>
+        <span className="text-[11px] font-mono text-slate-500">
+          Use ↑ ↓ arrows to adjust presentation order
+        </span>
+      </div>
+
       <div className="overflow-x-auto">
-        <table className="w-full text-left text-xs font-mono">
-          <thead className="bg-[#faf7f2] border-b border-slate-200 text-slate-600 font-bold">
+        <table className="w-full text-left text-xs font-sans">
+          <thead className="bg-slate-50 border-b border-slate-200 text-slate-600 font-bold uppercase text-[11px] font-mono">
             <tr>
-              <th className="py-3 px-3">Order</th>
-              <th className="py-3 px-3">Team ID</th>
-              <th className="py-3 px-3">Squad Name</th>
-              <th className="py-3 px-3">Leader</th>
-              <th className="py-3 px-3">SIH PS ID</th>
-              <th className="py-3 px-3">Google Drive Link</th>
-              <th className="py-3 px-3 text-right">Actions</th>
+              <th className="py-3.5 px-4 w-24">Standing #</th>
+              <th className="py-3.5 px-4">Squad Name</th>
+              <th className="py-3.5 px-4">Squad Leader</th>
+              <th className="py-3.5 px-4">Track</th>
+              <th className="py-3.5 px-4">Presentation Link</th>
+              <th className="py-3.5 px-4 text-right">Action</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100 text-slate-700">
             {queueTeams.map((team, idx) => {
               const isLive = team.id === screenStateTeamId;
               const driveLink = team.googleDriveFolder || team.submission?.googleDriveFileUrl;
+              const isOffline = driveLink?.startsWith('offline://');
 
               return (
-                <tr key={team.id} className={isLive ? 'bg-orange-50/70 font-semibold' : 'hover:bg-slate-50'}>
-                  <td className="py-2.5 px-3">
-                    <div className="flex items-center gap-1">
-                      <span className="font-bold text-slate-900 w-6">#{idx + 1}</span>
+                <tr
+                  key={team.id}
+                  className={`transition-colors ${
+                    isLive ? 'bg-orange-50/80 font-semibold' : 'hover:bg-slate-50/80'
+                  }`}
+                >
+                  {/* Standings Number & Up/Down Arrows */}
+                  <td className="py-3 px-4">
+                    <div className="flex items-center gap-2">
+                      <span className={`w-8 h-8 rounded-xl flex items-center justify-center font-mono font-black text-sm ${
+                        isLive
+                          ? 'bg-orange-600 text-white'
+                          : 'bg-slate-100 text-slate-800'
+                      }`}>
+                        #{idx + 1}
+                      </span>
+
                       <div className="flex flex-col">
                         <button
                           disabled={idx === 0}
                           onClick={() => onReorder(team.id, 'up')}
-                          className="text-slate-400 hover:text-slate-700 disabled:opacity-20 cursor-pointer p-0.5"
-                          title="Move Up"
+                          className="text-slate-400 hover:text-slate-800 disabled:opacity-20 cursor-pointer p-0.5"
+                          title="Move Up in Standings"
                         >
-                          <ArrowUp className="w-3 h-3" />
+                          <ArrowUp className="w-3.5 h-3.5" />
                         </button>
                         <button
                           disabled={idx === queueTeams.length - 1}
                           onClick={() => onReorder(team.id, 'down')}
-                          className="text-slate-400 hover:text-slate-700 disabled:opacity-20 cursor-pointer p-0.5"
-                          title="Move Down"
+                          className="text-slate-400 hover:text-slate-800 disabled:opacity-20 cursor-pointer p-0.5"
+                          title="Move Down in Standings"
                         >
-                          <ArrowDown className="w-3 h-3" />
+                          <ArrowDown className="w-3.5 h-3.5" />
                         </button>
                       </div>
                     </div>
                   </td>
 
-                  <td className="py-2.5 px-3 text-orange-700 font-bold">{team.id}</td>
-
-                  <td className="py-2.5 px-3 font-sans font-bold text-slate-900">
-                    <div className="flex items-center gap-1.5">
-                      <span>{team.name}</span>
+                  {/* Team Name */}
+                  <td className="py-3 px-4">
+                    <div className="flex items-center gap-2">
+                      <span className="font-bold text-slate-900 text-sm">{team.name}</span>
                       {isLive && (
-                        <span className="px-1.5 py-0.5 rounded bg-orange-600 text-white text-[9px] font-mono uppercase">
+                        <span className="px-2 py-0.5 rounded-full bg-orange-600 text-white text-[10px] font-mono font-bold uppercase tracking-wider animate-pulse">
                           ON SCREEN
                         </span>
                       )}
                     </div>
+                    <span className="text-[11px] font-mono text-slate-400">{team.id}</span>
                   </td>
 
-                  <td className="py-2.5 px-3 font-sans text-slate-600">
-                    {team.leaderName || 'N/A'}
+                  {/* Squad Leader */}
+                  <td className="py-3 px-4 text-slate-700">
+                    <span className="font-medium">{team.leaderName || '—'}</span>
+                    {team.leaderEmail && (
+                      <span className="block text-[11px] font-mono text-slate-400">{team.leaderEmail}</span>
+                    )}
                   </td>
 
-                  <td className="py-2.5 px-3 text-blue-700 font-bold">{team.psId || 'SIH1601'}</td>
+                  {/* Track */}
+                  <td className="py-3 px-4">
+                    <span className="px-2.5 py-1 rounded-lg bg-slate-100 text-slate-800 text-[11px] font-bold font-mono">
+                      {team.track}
+                    </span>
+                  </td>
 
-                  <td className="py-2.5 px-3 truncate max-w-[180px]">
-                    {driveLink ? (
+                  {/* Presentation Link */}
+                  <td className="py-3 px-4">
+                    {isOffline ? (
+                      <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-emerald-50 text-emerald-700 font-mono text-[11px] font-bold border border-emerald-200">
+                        <HardDrive className="w-3 h-3" />
+                        <span>Local Offline Deck</span>
+                      </span>
+                    ) : driveLink ? (
                       <a
                         href={driveLink}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="text-blue-600 hover:underline inline-flex items-center gap-1 truncate"
+                        className="inline-flex items-center gap-1 text-orange-600 hover:text-orange-700 font-mono text-xs font-bold underline"
                       >
-                        <span className="truncate">{driveLink}</span>
-                        <ExternalLink className="w-3 h-3 shrink-0" />
+                        <span>Open Deck</span>
+                        <ExternalLink className="w-3 h-3" />
                       </a>
                     ) : (
-                      <span className="text-slate-400 italic">No Drive link</span>
+                      <span className="text-slate-400 font-mono text-[11px]">No link</span>
                     )}
                   </td>
 
-                  <td className="py-2.5 px-3 text-right">
-                    <div className="flex items-center justify-end gap-1.5">
+                  {/* Actions: Present on Screen + Remove */}
+                  <td className="py-3 px-4 text-right">
+                    <div className="flex items-center justify-end gap-2">
                       <button
                         onClick={() => onSendToScreen(team.id)}
-                        className={`px-2.5 py-1 rounded-lg text-[11px] font-bold flex items-center gap-1 cursor-pointer transition-colors ${
+                        className={`px-3 py-1.5 rounded-xl font-bold text-xs flex items-center gap-1.5 transition-all cursor-pointer ${
                           isLive
-                            ? 'bg-orange-600 text-white'
-                            : 'bg-orange-100 hover:bg-orange-200 text-orange-800'
+                            ? 'bg-orange-600 text-white shadow-xs'
+                            : 'bg-slate-100 hover:bg-orange-600 hover:text-white text-slate-800'
                         }`}
-                        title="Broadcast on Projector Screen"
+                        title="Send this squad to Auditorium Screen"
                       >
-                        <Tv className="w-3 h-3" />
-                        <span>{isLive ? 'Live' : 'Send to Screen'}</span>
-                      </button>
-
-                      <button
-                        onClick={() => onEditSlide(team)}
-                        className="p-1 rounded-lg hover:bg-slate-200 text-slate-500 hover:text-slate-800 cursor-pointer"
-                        title="Edit Presentation Slides"
-                      >
-                        <Edit3 className="w-3.5 h-3.5" />
+                        <Play className="w-3.5 h-3.5 fill-current" />
+                        <span>{isLive ? 'Presenting' : 'Present'}</span>
                       </button>
 
                       <button
                         onClick={() => onRemove(team.id)}
-                        className="p-1 rounded-lg hover:bg-rose-100 text-slate-400 hover:text-rose-600 cursor-pointer"
-                        title="Remove from Line"
+                        className="p-1.5 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition-colors cursor-pointer"
+                        title="Remove from Lineup"
                       >
-                        <Trash2 className="w-3.5 h-3.5" />
+                        <Trash2 className="w-4 h-4" />
                       </button>
                     </div>
                   </td>

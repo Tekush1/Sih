@@ -39,7 +39,7 @@ export const STAGES_INITIAL: Stage[] = [
   }
 ];
 
-export function generateSlideDeck(teamName: string, track: TeamTrack, problemStatement?: string): SlideData[] {
+export function generateSlideDeck(teamName: string, track: TeamTrack, problemStatement?: string, psId?: string): SlideData[] {
   const titles = [
     '01. Problem Statement & Root Cause',
     '02. Proposed System Architecture',
@@ -48,14 +48,21 @@ export function generateSlideDeck(teamName: string, track: TeamTrack, problemSta
     '05. Impact & Feasibility',
     '06. Roadmap & Team Conclusion'
   ];
-  const categories = ['Problem', 'Architecture', 'Innovation', 'Prototype', 'Feasibility', 'Conclusion'];
+  const categories: SlideData['category'][] = [
+    'Problem Statement',
+    'Architecture & Solution',
+    'Core Innovation & Tech Stack',
+    'Live Prototype & Demo',
+    'Business Impact & Feasibility',
+    'Roadmap, Team & Conclusion'
+  ];
   const durations = [10, 60, 60, 40, 40, 20];
 
   return titles.map((title, i) => ({
     slideNumber: i + 1,
     durationSeconds: durations[i],
     title,
-    subtitle: problemStatement || `${track} Solution by ${teamName}`,
+    subtitle: problemStatement || `${track} Solution by ${teamName}${psId ? ` (${psId})` : ''}`,
     category: categories[i],
     bulletPoints: [
       `Key pitch objective for ${teamName} (${track})`,

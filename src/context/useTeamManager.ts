@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Team, TeamTrack, PPTSubmission, QRPass, SlideData } from '../types';
 import { generateSlideDeck } from '../data/seedData';
+import { saveLocalDeck } from '../utils/localDeckStorage';
 
 export function useTeamManager(
   storageKey: string,
@@ -71,6 +72,13 @@ export function useTeamManager(
     await new Promise((resolve) => setTimeout(resolve, 600));
     const team = teams.find((t) => t.id === teamId);
     if (!team) throw new Error('Team not found');
+
+    // Automatically store in local offline deck storage for zero-internet presentation
+    try {
+      await saveLocalDeck(teamId, file);
+    } catch (err) {
+      console.warn('Local deck storage note:', err);
+    }
 
     const slides = customSlides || generateSlideDeck(team.name, team.track, team.problemStatement, team.psId);
     const submission: PPTSubmission = {

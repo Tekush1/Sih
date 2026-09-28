@@ -49,8 +49,15 @@ export interface HackathonContextType {
     insertPosition?: 'top' | 'next' | 'end';
     slides?: SlideData[];
     googleDriveFolder?: string;
+    localFile?: File;
     members?: any[];
   }, options?: { position?: 'top' | 'next' | 'end'; sendImmediately?: boolean }) => Team;
+  batchImportOfflineDecks: (files: File[]) => Promise<{
+    matchedCount: number;
+    matchedTeams: { teamId: string; teamName: string; fileName: string; isNew: boolean }[];
+    newTeams: Team[];
+    updatedExistingTeams: Team[];
+  }>;
   reorderPresentationQueue: (teamIdOrOrderedIds: string | string[], direction?: 'up' | 'down') => void;
   removeTeamFromQueue: (teamId: string) => void;
   updateTeamSlideData: (teamId: string, slideIndex: number, updatedFields: Partial<SlideData>) => void;

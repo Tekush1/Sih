@@ -161,6 +161,7 @@ export const HackathonProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     setCustomSlideDurations: screen.setCustomSlideDurations,
     restartCurrentSlideTimer: screen.restartCurrentSlideTimer,
     insertTeamIntoQueue: queueMgr.insertTeamIntoQueue,
+    batchImportOfflineDecks: queueMgr.batchImportOfflineDecks,
     reorderPresentationQueue: queueMgr.reorderPresentationQueue,
     removeTeamFromQueue: queueMgr.removeTeamFromQueue,
     updateTeamSlideData: queueMgr.updateTeamSlideData,

@@ -2,6 +2,8 @@ import { useState, useMemo } from 'react';
 import { Team, TeamTrack, SlideData, CSVTeamRecord, CSVImportResult } from '../types';
 import { generateSlideDeck } from '../data/seedData';
 import { processCSVTeamRecords } from '../utils/csvImportHelper';
+import { saveLocalDeck } from '../utils/localDeckStorage';
+import { matchAndSaveOfflineDecks } from '../utils/localDeckBatchMatcher';
 
 export function useQueueManager(
   storageKey: string,
@@ -37,15 +39,31 @@ export function useQueueManager(
       sihOrganization?: string;
       track: TeamTrack;
       problemStatement: string;
+      durationMinutes?: number;
+      insertPosition?: 'top' | 'next' | 'end';
+      slides?: SlideData[];
       googleDriveFolder?: string;
+      localFile?: File;
       members?: any[];
     },
     options?: { position?: 'top' | 'next' | 'end'; sendImmediately?: boolean }
   ): Team => {
     const nextNum = teams.length + 1;
     const teamId = `SH26-${String(nextNum).padStart(3, '0')}`;
-    const driveFolder = data.googleDriveFolder || `https://drive.google.com/drive/folders/smart26_team_${teamId.toLowerCase()}`;
-    const slides = generateSlideDeck(data.name, data.track, data.problemStatement, data.psId);
+    const driveFolder = data.googleDriveFolder || `offline://${teamId}`;
+    const slides = data.slides || generateSlideDeck(data.name, data.track, data.problemStatement, data.psId);
+
+    if (data.localFile) {
+      saveLocalDeck(teamId, data.localFile);
+    }
+
+    const fileName = data.localFile
+      ? data.localFile.name
+      : `${data.name.replace(/[^a-zA-Z0-9]/g, '_')}_Deck.pdf`;
+    const fileSize = data.localFile
+      ? `${(data.localFile.size / (1024 * 1024)).toFixed(1)} MB`
+      : '4.2 MB';
+    const fileType = data.localFile?.name.toLowerCase().endsWith('.pptx') ? 'PPTX' : 'PDF';
 
     const newTeam: Team = {
       id: teamId,
@@ -65,11 +83,11 @@ export function useQueueManager(
       googleDriveFolder: driveFolder,
       submission: {
         id: `sub-${Date.now()}`,
-        fileName: `${data.name.replace(/[^a-zA-Z0-9]/g, '_')}_Deck.pdf`,
-        fileSize: '4.2 MB',
-        fileType: 'PDF',
+        fileName,
+        fileSize,
+        fileType,
         uploadedAt: new Date().toISOString().replace('T', ' ').substring(0, 19),
-        version: 'v1.0',
+        version: data.localFile ? 'Local Offline' : 'v1.0',
         googleDriveFolderUrl: driveFolder,
         googleDriveFileUrl: driveFolder,
         status: 'APPROVED',
@@ -80,7 +98,7 @@ export function useQueueManager(
 
     setTeams((prev) => [newTeam, ...prev]);
 
-    const pos = options?.position || 'end';
+    const pos = options?.position || data.insertPosition || 'end';
     setQueueOrder((prev) => {
       let nextOrder = [...prev];
       if (pos === 'top') nextOrder = [newTeam.id, ...nextOrder];
@@ -151,11 +169,34 @@ export function useQueueManager(
     return importResult;
   };
 
+  const batchImportOfflineDecks = async (files: File[]) => {
+    const res = await matchAndSaveOfflineDecks(files, teams, true);
+    if (res.matchedCount > 0) {
+      setTeams(res.updatedExistingTeams);
+      if (res.newTeams.length > 0) {
+        const newIds = res.newTeams.map((t) => t.id);
+        setQueueOrder((prev) => {
+          const set = new Set(prev);
+          const toAdd = newIds.filter((id) => !set.has(id));
+          return [...prev, ...toAdd];
+        });
+      }
+      addAuditLog(
+        'OFFLINE_DECK_BATCH',
+        'Admin',
+        `Imported ${res.matchedCount} offline decks (${res.newTeams.length} new squads added to lineup)`,
+        'SYSTEM'
+      );
+    }
+    return res;
+  };
+
   return {
     queueOrder,
     setQueueOrder,
     queueTeams,
     insertTeamIntoQueue,
+    batchImportOfflineDecks,
     reorderPresentationQueue,
     removeTeamFromQueue,
     updateTeamSlideData,
