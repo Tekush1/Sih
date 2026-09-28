@@ -6,10 +6,10 @@ import {
   QrCode, 
   CheckCircle2, 
   ShieldAlert, 
-  Layers, 
   Terminal,
   FolderSync
 } from 'lucide-react';
+import { SLIDE_CADENCE_ITEMS, EVALUATION_RUBRIC_PILLARS } from './guidelinesData';
 
 export const GuidelinesSection: React.FC = () => {
   return (
@@ -38,44 +38,7 @@ export const GuidelinesSection: React.FC = () => {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {[
-            {
-              num: '01',
-              time: '0:00 – 1:00 min',
-              title: 'Problem Statement & Context',
-              desc: 'Clearly define the real-world friction point, existing industry limitations, and quantified stakeholder impact.'
-            },
-            {
-              num: '02',
-              time: '1:00 – 2:00 min',
-              title: 'Proposed Architecture & Solution',
-              desc: 'Walk judges through your high-level system topology, decoupled layers, edge ingress, and fault resilience.'
-            },
-            {
-              num: '03',
-              time: '2:00 – 3:00 min',
-              title: 'Core Innovation & Tech Stack',
-              desc: 'Highlight technical breakthroughs, proprietary algorithms, code snippets, and modern systems primitives.'
-            },
-            {
-              num: '04',
-              time: '3:00 – 4:00 min',
-              title: 'Live Prototype & Demo',
-              desc: 'Demonstrate live working software, stress benchmarks under simulated load, and real-time telemetry output.'
-            },
-            {
-              num: '05',
-              time: '4:00 – 5:00 min',
-              title: 'Business Impact & Feasibility',
-              desc: 'State ROI unit economics, enterprise integration speed, regulatory compliance, and environmental efficiency.'
-            },
-            {
-              num: '06',
-              time: '5:00 – 6:00 min',
-              title: 'Roadmap, Team & Conclusion',
-              desc: 'Summarize core differentiators, cross-disciplinary squad pedigree, and commercial rollout trajectory.'
-            }
-          ].map((item) => (
+          {SLIDE_CADENCE_ITEMS.map((item) => (
             <div
               key={item.num}
               className="p-5 rounded-2xl bg-white border border-slate-200/90 hover:border-orange-300 transition-all flex flex-col justify-between shadow-xs"
@@ -99,7 +62,6 @@ export const GuidelinesSection: React.FC = () => {
 
       {/* Judging Rubric and Presentation System */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-        {/* Judging Rubric */}
         <div className="p-6 md:p-8 rounded-3xl bg-white border border-slate-200/90 space-y-6 shadow-xs">
           <div className="flex items-center gap-3">
             <div className="p-2.5 rounded-xl bg-orange-100 text-orange-600">
@@ -112,24 +74,7 @@ export const GuidelinesSection: React.FC = () => {
           </div>
 
           <div className="space-y-4">
-            {[
-              {
-                title: 'Innovation & Novelty (25 Points)',
-                desc: 'Uniqueness of the solution, departure from generic templates, and creative algorithmic thinking.'
-              },
-              {
-                title: 'Technical Rigor & Architecture (25 Points)',
-                desc: 'Quality of system architecture, modular decoupling, throughput benchmarks, and code standards.'
-              },
-              {
-                title: 'Feasibility & Real-World Impact (25 Points)',
-                desc: 'Commercial viability, unit economics, regulatory adherence, and operational scalability.'
-              },
-              {
-                title: 'Presentation & Live Demo (25 Points)',
-                desc: 'Pacing within the 6-minute engine, clarity of delivery, and live prototype responsiveness.'
-              }
-            ].map((r, idx) => (
+            {EVALUATION_RUBRIC_PILLARS.map((r, idx) => (
               <div key={idx} className="p-4 rounded-xl bg-[#faf7f2] border border-amber-100">
                 <div className="flex items-center justify-between text-xs font-mono mb-1">
                   <span className="font-bold text-slate-900">{r.title}</span>
@@ -144,39 +89,39 @@ export const GuidelinesSection: React.FC = () => {
         {/* PPT & QR Pass Protocol */}
         <div className="p-6 md:p-8 rounded-3xl bg-white border border-slate-200/90 space-y-6 shadow-xs">
           <div className="flex items-center gap-3">
-            <div className="p-2.5 rounded-xl bg-cyan-100 text-cyan-700">
-              <QrCode className="w-5 h-5" />
+            <div className="p-2.5 rounded-xl bg-amber-100 text-[#b47e3a]">
+              <ShieldAlert className="w-5 h-5" />
             </div>
             <div>
-              <h3 className="text-xl font-bold text-slate-900">Submission &amp; Stage Protocol</h3>
-              <p className="text-xs text-slate-500">Google Drive &amp; QR Validation Workflow</p>
+              <h3 className="text-xl font-bold text-slate-900">PPT &amp; Stage Pass Protocol</h3>
+              <p className="text-xs text-slate-500">4-Step Secure Presentation Pipeline</p>
             </div>
           </div>
 
-          <div className="space-y-3.5 text-xs text-slate-700">
+          <div className="space-y-3.5 text-xs">
             <div className="p-4 rounded-xl bg-[#faf7f2] border border-amber-100 space-y-1.5">
               <div className="flex items-center gap-2 text-orange-600 font-mono font-bold">
                 <FileText className="w-4 h-4" />
-                <span>1. File Format &amp; Deadline</span>
+                <span>1. Google Drive PPT Upload</span>
               </div>
               <p className="text-slate-600 leading-relaxed">
-                Submissions must be valid .PPTX or .PDF files up to 25MB. Must be structured with 6 presentation slides matching the official topics.
+                Teams upload their standardized 6-slide deck via PPTX or PDF. Files are automatically archived in the team Google Drive folder.
               </p>
             </div>
 
             <div className="p-4 rounded-xl bg-[#faf7f2] border border-amber-100 space-y-1.5">
-              <div className="flex items-center gap-2 text-blue-700 font-mono font-bold">
-                <FolderSync className="w-4 h-4" />
-                <span>2. Automated Google Drive Team Folder</span>
-              </div>
-              <p className="text-slate-600 leading-relaxed">
-                Upon registration, a dedicated cloud storage directory is provisioned per team: <code className="text-blue-800 font-mono">/SmartHackathon2026/Teams/SH26-XXX/</code>.
-              </p>
-            </div>
-
-            <div className="p-4 rounded-xl bg-[#faf7f2] border border-amber-100 space-y-1.5">
-              <div className="flex items-center gap-2 text-emerald-700 font-mono font-bold">
+              <div className="flex items-center gap-2 text-emerald-600 font-mono font-bold">
                 <CheckCircle2 className="w-4 h-4" />
+                <span>2. Automated 6-Slide Extraction</span>
+              </div>
+              <p className="text-slate-600 leading-relaxed">
+                The engine normalizes deck metadata, speaker notes, and problem statement mappings ready for auditorium projector rendering.
+              </p>
+            </div>
+
+            <div className="p-4 rounded-xl bg-[#faf7f2] border border-amber-100 space-y-1.5">
+              <div className="flex items-center gap-2 text-blue-600 font-mono font-bold">
+                <QrCode className="w-4 h-4" />
                 <span>3. Admin Approval &amp; QR Pass Issuance</span>
               </div>
               <p className="text-slate-600 leading-relaxed">

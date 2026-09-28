@@ -110,6 +110,9 @@ export interface Team {
   passcode: string;
   googleFormSubmissionId: string;
   googleDriveFolder: string;
+  localDeckUrl?: string;
+  localFileName?: string;
+  hasOfflineDeck?: boolean;
   submission?: PPTSubmission;
   qrPass?: QRPass;
   stageId?: string;
@@ -175,6 +178,12 @@ export interface CSVTeamRecord {
   leaderSem?: string;
   timestamp?: string;
   membersList?: {
+    name: string;
+    enrollment?: string;
+    phone?: string;
+    email?: string;
+  }[];
+  members?: {
     name: string;
     enrollment?: string;
     phone?: string;
